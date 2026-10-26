@@ -1,6 +1,6 @@
 {
-  "name": "Jingle · 我的周日出行",
-  "short_name": "周日出行",
+  "name": "钟钟周末出行计划",
+  "short_name": "周末出行",
   "description": "每周日出行计划记录本",
   "start_url": "./index.html",
   "scope": "./",
