@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FFF9F2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jingle 出行">
+<title>Jingle · 我的周日出行计划</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{
+  --bg:#FFF9F2;
+  --card:#FFFFFF;
+  --ink:#4A3F38;
+  --ink-2:#8A7C72;
+  --ink-3:#B6AAA1;
+  --line:#F0E4D8;
+  --peach:#FFB4A2;
+  --peach-d:#F08B76;
+  --mint:#A8D5BA;
+  --mint-d:#7FB99A;
+  --cream:#FFE2B0;
+  --lilac:#D9C7F0;
+  --sky:#BFD9F2;
+  --shadow:0 4px 18px rgba(180,150,130,.14);
+  --radius:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15px;line-height:1.6;
+  padding-bottom:60px;
+}
+button,input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+
+.wrap{max-width:900px;margin:0 auto;padding:0 16px}
+
+/* ---------- header ---------- */
+header{padding:26px 0 14px;text-align:center}
+.logo{font-size:26px;font-weight:700;letter-spacing:.5px}
+.logo .bell{display:inline-block;animation:swing 2.6s ease-in-out infinite}
+@keyframes swing{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+.sub{color:var(--ink-2);font-size:13px;margin-top:4px}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0 8px}
+.stat{background:var(--card);border-radius:14px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)}
+.stat b{display:block;font-size:20px;line-height:1.2}
+.stat span{font-size:11px;color:var(--ink-2)}
+
+/* ---------- toolbar ---------- */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:18px 0 12px}
+.btn{
+  background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:8px 15px;font-size:13px;box-shadow:var(--shadow);transition:.15s;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:var(--peach);border-color:var(--peach);color:#fff;font-weight:600}
+.btn.ghost{background:transparent;box-shadow:none;color:var(--ink-2)}
+.spacer{flex:1}
+
+/* ---------- section title ---------- */
+.sec{display:flex;align-items:center;gap:8px;margin:22px 0 10px;font-size:13px;color:var(--ink-2);font-weight:600}
+.sec::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ---------- trip card ---------- */
+.trip{
+  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px 18px;margin-bottom:12px;position:relative;overflow:hidden;
+}
+.trip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--peach)}
+.trip.done::before{background:var(--mint)}
+.trip.soon::before{background:var(--cream)}
+.trip-head{display:flex;align-items:flex-start;gap:12px}
+.trip-date{flex-shrink:0;width:62px;text-align:center;background:#FFF4EC;border-radius:12px;padding:6px 0}
+.trip-date .d{font-size:21px;font-weight:700;line-height:1.1}
+.trip-date .m{font-size:11px;color:var(--ink-2)}
+.trip-main{flex:1;min-width:0}
+.trip-title{font-size:16px;font-weight:600;word-break:break-all}
+.trip-dest{font-size:13px;color:var(--ink-2);margin-top:2px;display:flex;gap:10px;flex-wrap:wrap}
+.trip-dest i{font-style:normal}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;background:#FFF0E8;color:var(--peach-d)}
+.tag.mint{background:#E8F6EF;color:var(--mint-d)}
+.tag.cream{background:#FFF3DC;color:#B98A3E}
+.tag.lilac{background:#F1E9FB;color:#7E63A8}
+.trip-actions{display:flex;gap:6px;flex-shrink:0}
+
+.icon-btn{width:30px;height:30px;border-radius:50%;background:#FBF5EF;display:grid;place-items:center;font-size:14px}
+.icon-btn:hover{background:#F5E9DF}
+
+.trip-body{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);display:none}
+.trip.open .trip-body{display:block}
+.kv{display:grid;grid-template-columns:74px 1fr;gap:6px 10px;font-size:13px}
+.kv dt{color:var(--ink-2)}
+.kv dd{margin:0;word-break:break-all}
+.packing{margin-top:12px}
+.packing h4{font-size:12px;color:var(--ink-2);margin:0 0 6px;font-weight:600}
+.pk{display:flex;flex-wrap:wrap;gap:6px}
+.pk span{font-size:12px;background:#FBF5EF;border-radius:8px;padding:3px 9px;text-decoration:none}
+.pk span.on{background:#E8F6EF;color:var(--mint-d);text-decoration:line-through}
+.review{margin-top:12px;background:#FFFBF5;border-left:3px solid var(--cream);border-radius:0 10px 10px 0;padding:8px 12px;font-size:13px;white-space:pre-wrap;word-break:break-word}
+.photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.photos img{width:74px;height:74px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+
+.empty{text-align:center;color:var(--ink-3);padding:40px 0;font-size:14px}
+.empty .e{font-size:40px;display:block;margin-bottom:8px}
+
+/* ---------- dialog ---------- */
+dialog{
+  border:none;border-radius:22px;padding:0;width:min(660px,94vw);max-height:92vh;
+  box-shadow:0 18px 50px rgba(120,90,70,.28);background:var(--bg);
+}
+dialog::backdrop{background:rgba(74,63,56,.42)}
+.dlg-head{padding:18px 22px 12px;display:flex;align-items:center;gap:10px}
+.dlg-head h3{margin:0;font-size:17px;flex:1}
+.dlg-body{padding:0 22px 4px;max-height:64vh;overflow:auto}
+.dlg-foot{padding:14px 22px 20px;display:flex;gap:10px;justify-content:flex-end}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--ink-2);margin-bottom:4px}
+.field input,.field textarea,.field select{
+  width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);outline:none;
+}
+.field input:focus,.field textarea:focus{border-color:var(--peach)}
+.field textarea{resize:vertical;min-height:60px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.hint{font-size:11px;color:var(--ink-3);margin-top:3px}
+
+.pkedit{display:flex;flex-direction:column;gap:6px}
+.pkrow{display:flex;align-items:center;gap:8px}
+.pkrow input[type=text]{flex:1;padding:7px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.pkrow .del{color:var(--ink-3);font-size:16px;width:26px;height:26px;border-radius:50%}
+.pkrow .del:hover{background:#FFECE7;color:#E0603F}
+
+dialog.tpl .dlg-body{max-height:70vh}
+.tplrow{display:flex;gap:8px;align-items:center;padding:9px 12px;background:var(--card);border-radius:12px;margin-bottom:8px;border:1px solid var(--line)}
+.tplrow .nm{flex:1;font-weight:600;font-size:14px}
+.tplrow .pv{font-size:11px;color:var(--ink-3);width:100%;margin-top:2px;word-break:break-all}
+
+footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;padding:9px 18px;border-radius:999px;font-size:13px;
+  opacity:0;pointer-events:none;transition:.25s;z-index:99;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:640px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .row,.row3{grid-template-columns:1fr}
+  .trip{padding:14px}
+  .trip-actions{flex-direction:column}
+  .logo{font-size:22px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="bell">🔔</span> Jingle · 周日出行</div>
+    <div class="sub">每一个周日，都值得被好好计划一次</div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><b id="s-total">0</b><span>总计划</span></div>
+    <div class="stat"><b id="s-done">0</b><span>已出发</span></div>
+    <div class="stat"><b id="s-spend">¥0</b><span>累计花费</span></div>
+    <div class="stat"><b id="s-plan">0</b><span>待出发</span></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn primary" id="btn-new">＋ 新增周日计划</button>
+    <button class="btn" id="btn-tpl">📋 打包模板</button>
+    <div class="spacer"></div>
+    <button class="btn" id="btn-export">⬇ 备份</button>
+    <button class="btn" id="btn-sync">🔗 同步码</button>
+    <button class="btn" id="btn-import">⬆ 导入</button>
+    <input type="file" id="file-import" accept="application/json,.json" hidden>
+  </div>
+
+  <div id="list"></div>
+
+  <footer>数据保存在这台设备的浏览器里 · 记得偶尔备份一下 🧶</footer>
+</div>
+
+<!-- ========== 编辑弹窗 ========== -->
+<dialog id="dlg">
+  <form method="dialog" id="form">
+    <div class="dlg-head">
+      <h3 id="dlg-title">新增周日计划</h3>
+      <button type="button" class="icon-btn" id="dlg-close">✕</button>
+    </div>
+    <div class="dlg-body">
+      <div class="row">
+        <div class="field">
+          <label>日期（周日）</label>
+          <input type="date" name="date" id="f-date" required>
+          <div class="hint"><a href="#" id="next-sun" style="color:var(--peach-d)">填入下一个周日</a></div>
+        </div>
+        <div class="field">
+          <label>状态</label>
+          <select name="status" id="f-status">
+            <option value="planned">计划中</option>
+            <option value="done">已出发</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>这周去哪 / 主题</label>
+        <input type="text" name="title" id="f-title" placeholder="例：西湖边逛手作市集" required>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>目的地</label>
+          <input type="text" name="destination" id="f-destination" placeholder="具体地点">
+        </div>
+        <div class="field">
+          <label>交通方式</label>
+          <input type="text" name="transport" id="f-transport" placeholder="地铁 / 自驾 / 骑行…">
+        </div>
+      </div>
+
+      <div class="row3">
+        <div class="field">
+          <label>集合时间</label>
+          <input type="text" name="meetTime" id="f-meetTime" placeholder="09:30">
+        </div>
+        <div class="field">
+          <label>集合地点</label>
+          <input type="text" name="meetPlace" id="f-meetPlace" placeholder="地铁口 A">
+        </div>
+        <div class="field">
+          <label>返程时间</label>
+          <input type="text" name="returnTime" id="f-returnTime" placeholder="17:00">
+        </div>
+      </div>
+
+      <div class="row3">
+        <div class="field">
+          <label>预算（元）</label>
+          <input type="number" name="budget" id="f-budget" placeholder="0" min="0" step="1">
+        </div>
+        <div class="field">
+          <label>实际花费（元）</label>
+          <input type="number" name="actual" id="f-actual" placeholder="0" min="0" step="1">
+        </div>
+        <div class="field">
+          <label>同行人数</label>
+          <input type="number" name="people" id="f-people" placeholder="1" min="1" step="1">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>打包清单</label>
+        <div class="pkedit" id="f-packing"></div>
+        <div class="hint" style="margin-top:6px">
+          <a href="#" id="add-pk" style="color:var(--mint-d)">＋ 加一项</a> ·
+          <a href="#" id="apply-tpl" style="color:var(--lilac)">套用模板</a>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>注意事项</label>
+        <textarea name="notes" id="f-notes" placeholder="要提前预约？天气？带现金？"></textarea>
+      </div>
+
+      <div class="field">
+        <label>照片链接（可选，换行分隔）</label>
+        <textarea name="photos" id="f-photos" placeholder="https://…"></textarea>
+      </div>
+
+      <div class="field">
+        <label>事后小结</label>
+        <textarea name="review" id="f-review" placeholder="玩得怎么样？下次还想来吗？"></textarea>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn" id="btn-del" style="display:none">删除</button>
+      <div class="spacer"></div>
+      <button type="button" class="btn" id="btn-cancel">取消</button>
+      <button type="submit" class="btn primary">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ========== 模板弹窗 ========== -->
+<dialog id="dlg-tpl" class="tpl">
+  <div class="dlg-head">
+    <h3>打包模板</h3>
+    <button type="button" class="icon-btn" id="tpl-close">✕</button>
+  </div>
+  <div class="dlg-body">
+    <div id="tpl-list"></div>
+    <div class="field" style="margin-top:14px">
+      <label>新增模板</label>
+      <input type="text" id="tpl-name" placeholder="模板名，例：市集摆摊">
+      <input type="text" id="tpl-items" placeholder="物品，用逗号分隔" style="margin-top:8px">
+      <div class="hint"><a href="#" id="tpl-add" style="color:var(--peach-d)">＋ 保存为模板</a></div>
+    </div>
+  </div>
+  <div class="dlg-foot"><button type="button" class="btn" id="tpl-done">完成</button></div>
+</dialog>
+
+<!-- ========== 同步码弹窗 ========== -->
+<dialog id="dlg-sync">
+  <div class="dlg-head">
+    <h3>同步码</h3>
+    <button type="button" class="icon-btn" id="sync-close">✕</button>
+  </div>
+  <div class="dlg-body">
+    <div class="field">
+      <label>导出：复制这串码，发给自己（微信文件传输助手就行）</label>
+      <textarea id="sync-out" readonly style="min-height:110px;font-size:12px"></textarea>
+      <div class="hint"><a href="#" id="sync-copy" style="color:var(--peach-d)">复制同步码</a></div>
+    </div>
+    <div class="field">
+      <label>导入：把同步码粘贴进来</label>
+      <textarea id="sync-in" placeholder="粘贴同步码…" style="min-height:80px;font-size:12px"></textarea>
+      <div class="hint"><a href="#" id="sync-apply" style="color:var(--mint-d)">导入并覆盖当前数据</a></div>
+    </div>
+    <div class="hint">同步码就是整份数据的压缩包，换设备时用它搬家 🧳</div>
+  </div>
+  <div class="dlg-foot"><button type="button" class="btn" id="sync-done">完成</button></div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "jingle_sunday_trips_v1";
+  var $ = function(id){ return document.getElementById(id); };
+
+  var state = { trips: [], templates: [] };
+  var editingId = null;
+  var draftPacking = [];
+
+  /* ---------- 存储 ---------- */
+  function load(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(raw){
+        var d = JSON.parse(raw);
+        state.trips = Array.isArray(d.trips) ? d.trips : [];
+        state.templates = Array.isArray(d.templates) ? d.templates : [];
+      }
+    }catch(e){ console.warn("读取失败", e); }
+    if(state.templates.length === 0){
+      state.templates = [
+        { id: uid(), name: "日常出门", items: ["身份证","手机+充电宝","钥匙","纸巾","水杯","雨伞"] },
+        { id: uid(), name: "手作市集", items: ["现金零钱","收款码","包装袋","作品清单","折叠小桌","湿巾"] }
+      ];
+    }
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch(e){ toast("保存失败，可能空间不足"); }
+  }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  /* ---------- 工具 ---------- */
+  function toast(msg){
+    var t = $("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function(){ t.classList.remove("show"); }, 2000);
+  }
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+  function money(n){ return "¥" + (Math.round(n*100)/100).toLocaleString("zh-CN"); }
+
+  function todayStr(){
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
+  }
+  function pad(n){ return n < 10 ? "0"+n : ""+n; }
+  function nextSunday(){
+    var d = new Date();
+    var diff = (7 - d.getDay()) % 7;
+    if(diff === 0) diff = 7;
+    d.setDate(d.getDate() + diff);
+    return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
+  }
+  function fmtDate(s){
+    if(!s) return "";
+    var p = s.split("-");
+    if(p.length !== 3) return s;
+    var d = new Date(+p[0], +p[1]-1, +p[2]);
+    var w = ["周日","周一","周二","周三","周四","周五","周六"][d.getDay()];
+    return { m: (+p[1]) + "月", d: p[2], w: w, full: p[1]+"月"+p[2]+"日 "+w };
+  }
+  function daysTo(s){
+    if(!s) return null;
+    var a = new Date(todayStr()+"T00:00:00");
+    var b = new Date(s+"T00:00:00");
+    return Math.round((b - a) / 86400000);
+  }
+
+  /* ---------- 渲染 ---------- */
+  function render(){
+    // 统计
+    var done = state.trips.filter(function(t){ return t.status === "done"; });
+    var spend = done.reduce(function(a,t){ return a + num(t.actual); }, 0);
+    $("s-total").textContent = state.trips.length;
+    $("s-done").textContent = done.length;
+    $("s-spend").textContent = money(spend);
+    $("s-plan").textContent = state.trips.length - done.length;
+
+    if(state.trips.length === 0){
+      $("list").innerHTML = '<div class="empty"><span class="e">🧺</span>还没有计划，点上面那个按钮开始第一个周日吧</div>';
+      return;
+    }
+
+    var sorted = state.trips.slice().sort(function(a,b){ return (a.date||"").localeCompare(b.date||""); });
+    var today = todayStr();
+    var upcoming = sorted.filter(function(t){ return (t.date||"") >= today; });
+    var past = sorted.filter(function(t){ return (t.date||"") < today; }).reverse();
+
+    var html = "";
+    html += '<div class="sec">即将出发</div>';
+    html += upcoming.length ? upcoming.map(cardHTML).join("")
+          : '<div class="empty" style="padding:22px 0">最近没有安排，给自己放个假 ☕</div>';
+    if(past.length){
+      html += '<div class="sec">已经出发过</div>';
+      html += past.map(cardHTML).join("");
+    }
+    $("list").innerHTML = html;
+
+    Array.prototype.forEach.call(document.querySelectorAll(".trip-head"), function(el){
+      el.addEventListener("click", function(e){
+        if(e.target.closest(".trip-actions")) return;
+        el.parentElement.classList.toggle("open");
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-edit]"), function(el){
+      el.addEventListener("click", function(){ openEditor(el.getAttribute("data-edit")); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-del]"), function(el){
+      el.addEventListener("click", function(){
+        var id = el.getAttribute("data-del");
+        if(confirm("确定删掉这条计划？")){
+          state.trips = state.trips.filter(function(t){ return t.id !== id; });
+          save(); render(); toast("已删除");
+        }
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-toggle]"), function(el){
+      el.addEventListener("click", function(){
+        var t = find(el.getAttribute("data-toggle"));
+        if(!t) return;
+        if(t.status === "done"){ t.status = "planned"; } else { t.status = "done"; }
+        save(); render();
+        toast(t.status === "done" ? "标记完成 ✓" : "回到计划中");
+      });
+    });
+  }
+
+  function find(id){
+    for(var i=0;i<state.trips.length;i++){ if(state.trips[i].id === id) return state.trips[i]; }
+    return null;
+  }
+
+  function cardHTML(t){
+    var d = fmtDate(t.date);
+    var isDone = t.status === "done";
+    var dd = daysTo(t.date);
+    var cls = isDone ? "done" : (dd !== null && dd <= 2 && dd >= 0 ? "soon" : "");
+
+    var badge = "";
+    if(isDone){
+      badge = '<span class="tag mint">已出发</span>';
+    }else if(dd === 0){
+      badge = '<span class="tag cream">就是今天</span>';
+    }else if(dd === 1){
+      badge = '<span class="tag cream">明天</span>';
+    }else if(dd > 1){
+      badge = '<span class="tag">' + dd + ' 天后</span>';
+    }else{
+      badge = '<span class="tag lilac">已过期</span>';
+    }
+
+    var meta = [];
+    if(t.meetTime) meta.push("🕘 " + esc(t.meetTime) + (t.meetPlace ? " @" + esc(t.meetPlace) : ""));
+    if(t.transport) meta.push("🚇 " + esc(t.transport));
+    if(t.returnTime) meta.push("🔙 " + esc(t.returnTime));
+    if(num(t.budget) > 0) meta.push("💰 预算 " + money(num(t.budget)));
+
+    var pkTotal = (t.packing || []).length;
+    var pkDone = (t.packing || []).filter(function(p){ return p.done; }).length;
+    var spendLine = "";
+    if(num(t.actual) > 0){
+      var per = num(t.people) > 0 ? num(t.actual)/num(t.people) : num(t.actual);
+      spendLine = "实际 " + money(num(t.actual)) + (num(t.people) > 1 ? "（人均 " + money(per) + "）" : "");
+    }
+
+    var h = '<div class="trip ' + cls + '" data-id="' + t.id + '">';
+    h += '<div class="trip-head">';
+    h += '<div class="trip-date"><div class="d">' + d.d + '</div><div class="m">' + d.m + '</div></div>';
+    h += '<div class="trip-main">';
+    h += '<div class="trip-title">' + esc(t.title) + " " + badge + '</div>';
+    if(t.destination) h += '<div class="trip-dest"><i>📍 ' + esc(t.destination) + '</i></div>';
+    if(meta.length) h += '<div class="trip-dest">' + meta.map(function(m){ return "<i>"+m+"</i>"; }).join("") + '</div>';
+    if(spendLine) h += '<div class="trip-dest"><i>' + spendLine + '</i></div>';
+    h += '</div>';
+    h += '<div class="trip-actions">';
+    h += '<button class="icon-btn" data-toggle="' + t.id + '" title="切换状态">' + (isDone ? "↩" : "✓") + '</button>';
+    h += '<button class="icon-btn" data-edit="' + t.id + '" title="编辑">✎</button>';
+    h += '<button class="icon-btn" data-del="' + t.id + '" title="删除">🗑</button>';
+    h += '</div></div>';
+
+    h += '<div class="trip-body">';
+    h += '<dl class="kv">';
+    h += '<dt>集合</dt><dd>' + (t.meetTime ? esc(t.meetTime) : "—") + (t.meetPlace ? " · " + esc(t.meetPlace) : "") + '</dd>';
+    h += '<dt>返程</dt><dd>' + (t.returnTime ? esc(t.returnTime) : "—") + '</dd>';
+    h += '<dt>交通</dt><dd>' + (t.transport ? esc(t.transport) : "—") + '</dd>';
+    h += '<dt>预算</dt><dd>' + (num(t.budget) > 0 ? money(num(t.budget)) : "—") + '</dd>';
+    h += '<dt>花费</dt><dd>' + (num(t.actual) > 0 ? money(num(t.actual)) : "—") + '</dd>';
+    h += '</dl>';
+    if(pkTotal){
+      h += '<div class="packing"><h4>打包清单 ' + pkDone + "/" + pkTotal + '</h4><div class="pk">';
+      h += (t.packing||[]).map(function(p){
+        return '<span class="' + (p.done ? "on" : "") + '">' + esc(p.text) + '</span>';
+      }).join("");
+      h += '</div></div>';
+    }
+    if(t.notes){
+      h += '<div class="review" style="border-left-color:var(--sky)"><b>注意事项</b><br>' + esc(t.notes) + '</div>';
+    }
+    if(t.review){
+      h += '<div class="review"><b>事后小结</b><br>' + esc(t.review) + '</div>';
+    }
+    var photos = (t.photos || "").split(/\n+/).map(function(s){ return s.trim(); }).filter(Boolean);
+    if(photos.length){
+      h += '<div class="photos">' + photos.map(function(p){
+        return '<img src="' + esc(p) + '" alt="照片" onerror="this.style.display=\'none\'">';
+      }).join("") + '</div>';
+    }
+    h += '</div></div>';
+    return h;
+  }
+
+  /* ---------- 编辑 ---------- */
+  function renderPacking(){
+    var box = $("f-packing");
+    box.innerHTML = "";
+    draftPacking.forEach(function(item, i){
+      var row = document.createElement("div");
+      row.className = "pkrow";
+      var cb = document.createElement("input");
+      cb.type = "checkbox"; cb.checked = !!item.done;
+      cb.style.width = "16px"; cb.style.height = "16px";
+      cb.addEventListener("change", function(){ draftPacking[i].done = cb.checked; });
+      var txt = document.createElement("input");
+      txt.type = "text"; txt.value = item.text; txt.placeholder = "要带的东西";
+      txt.addEventListener("input", function(){ draftPacking[i].text = txt.value; });
+      var del = document.createElement("button");
+      del.type = "button"; del.className = "del"; del.textContent = "×";
+      del.addEventListener("click", function(){
+        draftPacking.splice(i,1); renderPacking();
+      });
+      row.appendChild(cb); row.appendChild(txt); row.appendChild(del);
+      box.appendChild(row);
+    });
+    if(draftPacking.length === 0){
+      box.innerHTML = '<div class="hint">还没有清单，点下面「加一项」或「套用模板」</div>';
+    }
+  }
+
+  function openEditor(id){
+    editingId = id;
+    var t = id ? find(id) : null;
+    $("dlg-title").textContent = t ? "编辑计划" : "新增周日计划";
+    $("btn-del").style.display = t ? "block" : "none";
+
+    $("f-date").value = t ? (t.date || "") : nextSunday();
+    $("f-status").value = t ? (t.status || "planned") : "planned";
+    $("f-title").value = t ? (t.title || "") : "";
+    $("f-destination").value = t ? (t.destination || "") : "";
+    $("f-transport").value = t ? (t.transport || "") : "";
+    $("f-meetTime").value = t ? (t.meetTime || "") : "";
+    $("f-meetPlace").value = t ? (t.meetPlace || "") : "";
+    $("f-returnTime").value = t ? (t.returnTime || "") : "";
+    $("f-budget").value = t && num(t.budget) > 0 ? num(t.budget) : "";
+    $("f-actual").value = t && num(t.actual) > 0 ? num(t.actual) : "";
+    $("f-people").value = t && num(t.people) > 0 ? num(t.people) : "";
+    $("f-notes").value = t ? (t.notes || "") : "";
+    $("f-photos").value = t ? (t.photos || "") : "";
+    $("f-review").value = t ? (t.review || "") : "";
+
+    draftPacking = t ? (t.packing || []).map(function(p){ return { text:p.text, done:!!p.done }; }) : [];
+    renderPacking();
+
+    $("dlg").showModal();
+  }
+
+  $("form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var data = {
+      date: $("f-date").value,
+      status: $("f-status").value,
+      title: $("f-title").value.trim(),
+      destination: $("f-destination").value.trim(),
+      transport: $("f-transport").value.trim(),
+      meetTime: $("f-meetTime").value.trim(),
+      meetPlace: $("f-meetPlace").value.trim(),
+      returnTime: $("f-returnTime").value.trim(),
+      budget: num($("f-budget").value),
+      actual: num($("f-actual").value),
+      people: num($("f-people").value),
+      notes: $("f-notes").value.trim(),
+      photos: $("f-photos").value.trim(),
+      review: $("f-review").value.trim(),
+      packing: draftPacking.filter(function(p){ return p.text && p.text.trim(); })
+                           .map(function(p){ return { text: p.text.trim(), done: !!p.done }; })
+    };
+    if(!data.title){ toast("给它起个名字吧"); return; }
+
+    if(editingId){
+      var t = find(editingId);
+      if(t){ for(var k in data){ t[k] = data[k]; } }
+      toast("已更新 ✓");
+    }else{
+      data.id = uid();
+      state.trips.push(data);
+      toast("新计划已加入 🧺");
+    }
+    save();
+    $("dlg").close();
+    render();
+  });
+
+  $("dlg-close").addEventListener("click", function(){ $("dlg").close(); });
+  $("btn-cancel").addEventListener("click", function(){ $("dlg").close(); });
+  $("btn-del").addEventListener("click", function(){
+    if(editingId && confirm("确定删掉这条计划？")){
+      state.trips = state.trips.filter(function(t){ return t.id !== editingId; });
+      save(); $("dlg").close(); render(); toast("已删除");
+    }
+  });
+  $("next-sun").addEventListener("click", function(e){
+    e.preventDefault(); $("f-date").value = nextSunday();
+  });
+  $("add-pk").addEventListener("click", function(e){
+    e.preventDefault(); draftPacking.push({ text:"", done:false }); renderPacking();
+    var rows = $("f-packing").querySelectorAll("input[type=text]");
+    if(rows.length) rows[rows.length-1].focus();
+  });
+  $("apply-tpl").addEventListener("click", function(e){
+    e.preventDefault();
+    if(!state.templates.length){ toast("还没有模板"); return; }
+    var names = state.templates.map(function(t,i){ return (i+1) + ". " + t.name; }).join("\n");
+    var pick = prompt("选择要套用的模板（输入序号）：\n" + names, "1");
+    if(pick === null) return;
+    var idx = parseInt(pick, 10) - 1;
+    if(isNaN(idx) || idx < 0 || idx >= state.templates.length){ toast("序号不对哦"); return; }
+    state.templates[idx].items.forEach(function(it){
+      var exists = draftPacking.some(function(p){ return p.text === it; });
+      if(!exists) draftPacking.push({ text: it, done: false });
+    });
+    renderPacking(); toast("清单已套用");
+  });
+
+  $("btn-new").addEventListener("click", function(){ openEditor(null); });
+
+  /* ---------- 模板 ---------- */
+  function renderTpl(){
+    var box = $("tpl-list");
+    if(!state.templates.length){
+      box.innerHTML = '<div class="hint">还没有模板，在下面添加一个吧</div>';
+      return;
+    }
+    box.innerHTML = state.templates.map(function(t){
+      return '<div class="tplrow">'
+        + '<div style="flex:1"><div class="nm">' + esc(t.name) + '</div>'
+        + '<div class="pv">' + esc(t.items.join(" · ")) + '</div></div>'
+        + '<button class="icon-btn" data-tpldel="' + t.id + '">🗑</button>'
+        + '</div>';
+    }).join("");
+    Array.prototype.forEach.call(box.querySelectorAll("[data-tpldel]"), function(el){
+      el.addEventListener("click", function(){
+        var id = el.getAttribute("data-tpldel");
+        state.templates = state.templates.filter(function(t){ return t.id !== id; });
+        save(); renderTpl(); toast("模板已删除");
+      });
+    });
+  }
+  $("btn-tpl").addEventListener("click", function(){ renderTpl(); $("dlg-tpl").showModal(); });
+  $("tpl-close").addEventListener("click", function(){ $("dlg-tpl").close(); });
+  $("tpl-done").addEventListener("click", function(){ $("dlg-tpl").close(); });
+  $("tpl-add").addEventListener("click", function(e){
+    e.preventDefault();
+    var name = $("tpl-name").value.trim();
+    var items = $("tpl-items").value.split(/[,，、]/).map(function(s){ return s.trim(); }).filter(Boolean);
+    if(!name || !items.length){ toast("模板名和物品都要填"); return; }
+    state.templates.push({ id: uid(), name: name, items: items });
+    save(); $("tpl-name").value = ""; $("tpl-items").value = "";
+    renderTpl(); toast("模板已保存 ✓");
+  });
+
+  /* ---------- 备份 / 导入 / 同步码 ---------- */
+  function payload(){
+    return JSON.stringify({ v:1, exportedAt:new Date().toISOString(), trips:state.trips, templates:state.templates });
+  }
+  function applyData(obj){
+    if(!obj || !Array.isArray(obj.trips)){ toast("数据格式不对"); return false; }
+    state.trips = obj.trips.map(function(t){
+      if(!t.id) t.id = uid();
+      if(!Array.isArray(t.packing)) t.packing = [];
+      return t;
+    });
+    if(Array.isArray(obj.templates)) state.templates = obj.templates;
+    save(); render(); toast("导入成功 ✓");
+    return true;
+  }
+
+  $("btn-export").addEventListener("click", function(){
+    var blob = new Blob([payload()], { type:"application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "jingle-trips-" + todayStr() + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    toast("备份已下载 ⬇");
+  });
+
+  $("btn-import").addEventListener("click", function(){ $("file-import").click(); });
+  $("file-import").addEventListener("change", function(e){
+    var f = e.target.files && e.target.files[0];
+    if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      try{ applyData(JSON.parse(r.result)); }
+      catch(err){ toast("文件读不出来"); }
+    };
+    r.readAsText(f);
+    e.target.value = "";
+  });
+
+  function toCode(str){
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+  function fromCode(code){
+    return decodeURIComponent(escape(atob(code.replace(/\s+/g, ""))));
+  }
+  $("btn-sync").addEventListener("click", function(){
+    $("sync-out").value = toCode(payload());
+    $("sync-in").value = "";
+    $("dlg-sync").showModal();
+  });
+  $("sync-close").addEventListener("click", function(){ $("dlg-sync").close(); });
+  $("sync-done").addEventListener("click", function(){ $("dlg-sync").close(); });
+  $("sync-copy").addEventListener("click", function(e){
+    e.preventDefault();
+    var ta = $("sync-out");
+    ta.select(); ta.setSelectionRange(0, 999999);
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(ta.value);
+      }else{
+        document.execCommand("copy");
+      }
+      toast("已复制，发给另一台设备吧 🔗");
+    }catch(err){ toast("复制失败，请手动选中复制"); }
+  });
+  $("sync-apply").addEventListener("click", function(e){
+    e.preventDefault();
+    var code = $("sync-in").value.trim();
+    if(!code){ toast("先粘贴同步码"); return; }
+    if(!confirm("会覆盖这台设备上的现有数据，继续？")) return;
+    try{ applyData(JSON.parse(fromCode(code))); $("dlg-sync").close(); }
+    catch(err){ toast("同步码无效"); }
+  });
+
+  /* ---------- 启动 ---------- */
+  load();
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "Jingle · 我的周日出行",
+  "short_name": "周日出行",
+  "description": "每周日出行计划记录本",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF9F2",
+  "theme_color": "#FFF9F2",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
