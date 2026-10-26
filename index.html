@@ -538,13 +538,7 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
 
     var chips = [];
     var itin = (t.itinerary || []).filter(function(x){ return (x.text||"").trim() || (x.time||"").trim(); });
-    chips.push('<span class="chip">🗓 行程 <b>' + itin.length + ' 站</b></span>');
-    if(itin.length){
-      var first = itin[0], last = itin[itin.length-1];
-      if(first.time || last.time){
-        chips.push('<span class="chip">🕘 ' + (first.time ? esc(first.time) : "—") + ' → ' + (last.time ? esc(last.time) : "—") + '</span>');
-      }
-    }
+    chips.push('<span class="chip">🗓 行程 <b>' + itin.length + ' 条</b></span>');
     if(pkTotal) chips.push('<span class="chip">🎒 清单 <b>' + pkDone + '/' + pkTotal + '</b></span>');
 
     var outfit = (t.outfit || "").split(/\n+/).map(function(s){ return s.trim(); }).filter(Boolean);
@@ -572,7 +566,7 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     if(itin.length){
       h += '<div class="dgroup" style="margin-bottom:10px"><h5>🗓 具体行程安排</h5><ul class="tl">';
       h += itin.map(function(x){
-        return '<li>' + (x.time ? '<span class="tm">' + esc(x.time) + '</span>' : '') + esc(x.text) + '</li>';
+        return '<li>' + esc(x.text || x.time || '') + '</li>';
       }).join("");
       h += '</ul></div>';
     }else{
@@ -627,18 +621,15 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     draftItin.forEach(function(item, i){
       var row = document.createElement("div");
       row.className = "itrow";
-      var tm = document.createElement("input");
-      tm.type = "text"; tm.className = "tm"; tm.value = item.time || ""; tm.placeholder = "09:30";
-      tm.addEventListener("input", function(){ draftItin[i].time = tm.value; });
       var txt = document.createElement("input");
-      txt.type = "text"; txt.value = item.text || ""; txt.placeholder = "做什么 / 去哪";
+      txt.type = "text"; txt.value = item.text || ""; txt.placeholder = "例如：10:30 逛手作市集";
       txt.addEventListener("input", function(){ draftItin[i].text = txt.value; });
       var del = document.createElement("button");
       del.type = "button"; del.className = "del"; del.textContent = "×";
       del.addEventListener("click", function(){
         draftItin.splice(i,1); renderItin();
       });
-      row.appendChild(tm); row.appendChild(txt); row.appendChild(del);
+      row.appendChild(txt); row.appendChild(del);
       box.appendChild(row);
     });
     if(draftItin.length === 0){
@@ -687,17 +678,21 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     $("f-photos").value = t ? (t.photos || "") : "";
     $("f-review").value = t ? (t.review || "") : "";
 
-    // 行程：优先用新字段；老数据把「集合/交通/返程」自动串成时间轴
+    // 行程：优先用新字段；老数据把「集合/交通/返程」自动串成几条
     var itin = [];
     if(t && t.itinerary && t.itinerary.length){
-      itin = t.itinerary.map(function(x){ return { time: x.time || "", text: x.text || "" }; });
+      itin = t.itinerary.map(function(x){
+        var tm = (x.time || "").trim();
+        var tx = (x.text || "").trim();
+        return { time: "", text: (tm && tx) ? (tm + " " + tx) : (tx || tm) };
+      });
     }else if(t){
       if(t.meetTime || t.meetPlace){
-        itin.push({ time: t.meetTime || "", text: "集合" + (t.meetPlace ? " · " + t.meetPlace : "") });
+        itin.push({ time: "", text: (t.meetTime ? t.meetTime + " " : "") + "集合" + (t.meetPlace ? " · " + t.meetPlace : "") });
       }
       if(t.transport) itin.push({ time: "", text: "交通：" + t.transport });
       if(t.destination) itin.push({ time: "", text: "到 " + t.destination });
-      if(t.returnTime) itin.push({ time: t.returnTime, text: "返程" });
+      if(t.returnTime) itin.push({ time: "", text: t.returnTime + " 返程" });
     }
 
     draftItin = itin;
@@ -720,8 +715,8 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
       notes: $("f-notes").value.trim(),
       photos: $("f-photos").value.trim(),
       review: $("f-review").value.trim(),
-      itinerary: draftItin.filter(function(x){ return (x.text && x.text.trim()) || (x.time && x.time.trim()); })
-                          .map(function(x){ return { time: (x.time || "").trim(), text: (x.text || "").trim() }; }),
+      itinerary: draftItin.filter(function(x){ return x.text && x.text.trim(); })
+                          .map(function(x){ return { text: x.text.trim() }; }),
       packing: draftPacking.filter(function(p){ return p.text && p.text.trim(); })
                            .map(function(p){ return { text: p.text.trim(), done: !!p.done }; })
     };
@@ -755,7 +750,7 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
   $("add-it").addEventListener("click", function(e){
     e.preventDefault(); draftItin.push({ time:"", text:"" }); renderItin();
     var rows = $("f-itin").querySelectorAll("input[type=text]");
-    if(rows.length) rows[rows.length-2].focus();
+    if(rows.length) rows[rows.length-1].focus();
   });
   $("iquick").addEventListener("click", function(e){
     var a = e.target.closest("a[data-i]");
@@ -766,7 +761,7 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     if(!exists) draftItin.push({ time:"", text: txt });
     renderItin();
     var rows = $("f-itin").querySelectorAll("input[type=text]");
-    if(rows.length) rows[rows.length-2].focus();
+    if(rows.length) rows[rows.length-1].focus();
   });
 
   $("add-pk").addEventListener("click", function(e){
