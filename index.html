@@ -160,6 +160,23 @@ dialog::backdrop{background:rgba(74,63,56,.42)}
 .pkrow .del{color:var(--ink-3);font-size:16px;width:26px;height:26px;border-radius:50%}
 .pkrow .del:hover{background:#FFECE7;color:#E0603F}
 
+/* 行程安排编辑 */
+.itedit{display:flex;flex-direction:column;gap:6px}
+.itrow{display:flex;align-items:center;gap:7px}
+.itrow input{flex:1;padding:7px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);font:inherit;font-size:13px;color:var(--ink)}
+.itrow input.tm{flex:0 0 82px;text-align:center;font-weight:600;color:var(--peach-d)}
+.itrow .del{color:var(--ink-3);font-size:16px;width:26px;height:26px;border-radius:50%;flex:0 0 auto}
+.itrow .del:hover{background:#FFECE7;color:#E0603F}
+
+/* 行程时间轴（卡片） */
+.tl{list-style:none;margin:2px 0 0;padding:0}
+.tl li{position:relative;padding:0 0 10px 18px;font-size:13px;line-height:1.6}
+.tl li::before{content:"";position:absolute;left:2px;top:7px;width:7px;height:7px;border-radius:50%;background:var(--peach);box-shadow:0 0 0 3px #FDF1E8}
+.tl li::after{content:"";position:absolute;left:5px;top:16px;bottom:0;width:1px;background:#F3E2D4}
+.tl li:last-child{padding-bottom:0}
+.tl li:last-child::after{display:none}
+.tl .tm{color:var(--peach-d);font-weight:600;margin-right:8px;font-variant-numeric:tabular-nums}
+
 dialog.tpl .dlg-body{max-height:70vh}
 .tplrow{display:flex;gap:8px;align-items:center;padding:9px 12px;background:var(--card);border-radius:12px;margin-bottom:8px;border:1px solid var(--line)}
 .tplrow .nm{flex:1;font-weight:600;font-size:14px}
@@ -195,7 +212,7 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
   <div class="stats">
     <div class="stat"><b id="s-total">0</b><span>总计划</span></div>
     <div class="stat"><b id="s-done">0</b><span>已出发</span></div>
-    <div class="stat"><b id="s-spend">¥0</b><span>累计花费</span></div>
+    <div class="stat"><b id="s-month">0</b><span>本月出行</span></div>
     <div class="stat"><b id="s-plan">0</b><span>待出发</span></div>
   </div>
 
@@ -242,44 +259,21 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
         <input type="text" name="title" id="f-title" placeholder="例：西湖边逛手作市集" required>
       </div>
 
-      <div class="row">
-        <div class="field">
-          <label>目的地</label>
-          <input type="text" name="destination" id="f-destination" placeholder="具体地点">
+      <div class="field">
+        <label>🗓 具体行程安排</label>
+        <div class="itedit" id="f-itin"></div>
+        <div class="hint" style="margin-top:6px">
+          <a href="#" id="add-it" style="color:var(--peach-d)">＋ 加一行</a>
         </div>
-        <div class="field">
-          <label>交通方式</label>
-          <input type="text" name="transport" id="f-transport" placeholder="地铁 / 自驾 / 骑行…">
-        </div>
-      </div>
-
-      <div class="row3">
-        <div class="field">
-          <label>集合时间</label>
-          <input type="text" name="meetTime" id="f-meetTime" placeholder="09:30">
-        </div>
-        <div class="field">
-          <label>集合地点</label>
-          <input type="text" name="meetPlace" id="f-meetPlace" placeholder="地铁口 A">
-        </div>
-        <div class="field">
-          <label>返程时间</label>
-          <input type="text" name="returnTime" id="f-returnTime" placeholder="17:00">
-        </div>
-      </div>
-
-      <div class="row3">
-        <div class="field">
-          <label>预算（元）</label>
-          <input type="number" name="budget" id="f-budget" placeholder="0" min="0" step="1">
-        </div>
-        <div class="field">
-          <label>实际花费（元）</label>
-          <input type="number" name="actual" id="f-actual" placeholder="0" min="0" step="1">
-        </div>
-        <div class="field">
-          <label>同行人数</label>
-          <input type="number" name="people" id="f-people" placeholder="1" min="1" step="1">
+        <div class="oquick" id="iquick" style="margin-top:8px">
+          <a href="#" data-i="出发">出发</a>
+          <a href="#" data-i="到目的地">到目的地</a>
+          <a href="#" data-i="午饭">午饭</a>
+          <a href="#" data-i="逛市集">逛市集</a>
+          <a href="#" data-i="喝咖啡休息">喝咖啡休息</a>
+          <a href="#" data-i="拍照">拍照</a>
+          <a href="#" data-i="返程">返程</a>
+          <a href="#" data-i="到家">到家</a>
         </div>
       </div>
 
@@ -385,6 +379,7 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
   var state = { trips: [], templates: [] };
   var editingId = null;
   var draftPacking = [];
+  var draftItin = [];
 
   /* ---------- 存储 ---------- */
   function load(){
@@ -455,10 +450,11 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
   function render(){
     // 统计
     var done = state.trips.filter(function(t){ return t.status === "done"; });
-    var spend = done.reduce(function(a,t){ return a + num(t.actual); }, 0);
+    var ym = todayStr().slice(0,7);
+    var thisMonth = state.trips.filter(function(t){ return (t.date||"").slice(0,7) === ym; });
     $("s-total").textContent = state.trips.length;
     $("s-done").textContent = done.length;
-    $("s-spend").textContent = money(spend);
+    $("s-month").textContent = thisMonth.length;
     $("s-plan").textContent = state.trips.length - done.length;
 
     if(state.trips.length === 0){
@@ -541,11 +537,14 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     var per = (people > 0 && num(t.actual) > 0) ? num(t.actual) / people : 0;
 
     var chips = [];
-    chips.push('<span class="chip">🕘 ' + (t.meetTime ? esc(t.meetTime) : '<span class="muted">时间待定</span>') + '</span>');
-    if(t.transport) chips.push('<span class="chip">🚇 ' + esc(t.transport) + '</span>');
-    if(t.returnTime) chips.push('<span class="chip">🔙 ' + esc(t.returnTime) + '</span>');
-    if(num(t.budget) > 0) chips.push('<span class="chip">💰 预算 <b>' + money(num(t.budget)) + '</b></span>');
-    if(num(t.actual) > 0) chips.push('<span class="chip">🧾 实际 <b>' + money(num(t.actual)) + '</b></span>');
+    var itin = (t.itinerary || []).filter(function(x){ return (x.text||"").trim() || (x.time||"").trim(); });
+    chips.push('<span class="chip">🗓 行程 <b>' + itin.length + ' 站</b></span>');
+    if(itin.length){
+      var first = itin[0], last = itin[itin.length-1];
+      if(first.time || last.time){
+        chips.push('<span class="chip">🕘 ' + (first.time ? esc(first.time) : "—") + ' → ' + (last.time ? esc(last.time) : "—") + '</span>');
+      }
+    }
     if(pkTotal) chips.push('<span class="chip">🎒 清单 <b>' + pkDone + '/' + pkTotal + '</b></span>');
 
     var outfit = (t.outfit || "").split(/\n+/).map(function(s){ return s.trim(); }).filter(Boolean);
@@ -570,21 +569,15 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     h += '</div></div>';
 
     h += '<div class="trip-body">';
-    h += '<div class="detail">';
-    h += '<div class="dgroup"><h5>行程安排</h5>';
-    h += row('集合时间', t.meetTime ? esc(t.meetTime) : '');
-    h += row('集合地点', t.meetPlace ? esc(t.meetPlace) : '');
-    h += row('返程时间', t.returnTime ? esc(t.returnTime) : '');
-    h += row('交通方式', t.transport ? esc(t.transport) : '');
-    h += row('目的地', t.destination ? esc(t.destination) : '');
-    h += '</div>';
-    h += '<div class="dgroup"><h5>花费记录</h5>';
-    h += row('预算', num(t.budget) > 0 ? money(num(t.budget)) : '');
-    h += row('实际花费', num(t.actual) > 0 ? money(num(t.actual)) : '');
-    h += row('同行人数', people > 0 ? people + ' 人' : '');
-    h += row('人均', per > 0 ? money(per) : '');
-    h += row('预算结余', (num(t.budget) > 0 && num(t.actual) > 0) ? money(num(t.budget) - num(t.actual)) : '');
-    h += '</div></div>';
+    if(itin.length){
+      h += '<div class="dgroup" style="margin-bottom:10px"><h5>🗓 具体行程安排</h5><ul class="tl">';
+      h += itin.map(function(x){
+        return '<li>' + (x.time ? '<span class="tm">' + esc(x.time) + '</span>' : '') + esc(x.text) + '</li>';
+      }).join("");
+      h += '</ul></div>';
+    }else{
+      h += '<div class="dgroup" style="margin-bottom:10px"><h5>🗓 具体行程安排</h5><div class="muted" style="font-size:12px">还没写行程，点 ✎ 补上</div></div>';
+    }
 
     if(outfit.length || t.weather){
       h += '<div class="outfit"><h4>👗 穿搭建议'
@@ -628,6 +621,31 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
   }
 
   /* ---------- 编辑 ---------- */
+  function renderItin(){
+    var box = $("f-itin");
+    box.innerHTML = "";
+    draftItin.forEach(function(item, i){
+      var row = document.createElement("div");
+      row.className = "itrow";
+      var tm = document.createElement("input");
+      tm.type = "text"; tm.className = "tm"; tm.value = item.time || ""; tm.placeholder = "09:30";
+      tm.addEventListener("input", function(){ draftItin[i].time = tm.value; });
+      var txt = document.createElement("input");
+      txt.type = "text"; txt.value = item.text || ""; txt.placeholder = "做什么 / 去哪";
+      txt.addEventListener("input", function(){ draftItin[i].text = txt.value; });
+      var del = document.createElement("button");
+      del.type = "button"; del.className = "del"; del.textContent = "×";
+      del.addEventListener("click", function(){
+        draftItin.splice(i,1); renderItin();
+      });
+      row.appendChild(tm); row.appendChild(txt); row.appendChild(del);
+      box.appendChild(row);
+    });
+    if(draftItin.length === 0){
+      box.innerHTML = '<div class="hint">还没有安排，点下面「加一行」开始写 🗓</div>';
+    }
+  }
+
   function renderPacking(){
     var box = $("f-packing");
     box.innerHTML = "";
@@ -663,19 +681,27 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     $("f-date").value = t ? (t.date || "") : nextSunday();
     $("f-status").value = t ? (t.status || "planned") : "planned";
     $("f-title").value = t ? (t.title || "") : "";
-    $("f-destination").value = t ? (t.destination || "") : "";
-    $("f-transport").value = t ? (t.transport || "") : "";
-    $("f-meetTime").value = t ? (t.meetTime || "") : "";
-    $("f-meetPlace").value = t ? (t.meetPlace || "") : "";
-    $("f-returnTime").value = t ? (t.returnTime || "") : "";
-    $("f-budget").value = t && num(t.budget) > 0 ? num(t.budget) : "";
-    $("f-actual").value = t && num(t.actual) > 0 ? num(t.actual) : "";
-    $("f-people").value = t && num(t.people) > 0 ? num(t.people) : "";
     $("f-weather").value = t ? (t.weather || "") : "";
     $("f-outfit").value = t ? (t.outfit || "") : "";
     $("f-notes").value = t ? (t.notes || "") : "";
     $("f-photos").value = t ? (t.photos || "") : "";
     $("f-review").value = t ? (t.review || "") : "";
+
+    // 行程：优先用新字段；老数据把「集合/交通/返程」自动串成时间轴
+    var itin = [];
+    if(t && t.itinerary && t.itinerary.length){
+      itin = t.itinerary.map(function(x){ return { time: x.time || "", text: x.text || "" }; });
+    }else if(t){
+      if(t.meetTime || t.meetPlace){
+        itin.push({ time: t.meetTime || "", text: "集合" + (t.meetPlace ? " · " + t.meetPlace : "") });
+      }
+      if(t.transport) itin.push({ time: "", text: "交通：" + t.transport });
+      if(t.destination) itin.push({ time: "", text: "到 " + t.destination });
+      if(t.returnTime) itin.push({ time: t.returnTime, text: "返程" });
+    }
+
+    draftItin = itin;
+    renderItin();
 
     draftPacking = t ? (t.packing || []).map(function(p){ return { text:p.text, done:!!p.done }; }) : [];
     renderPacking();
@@ -689,19 +715,13 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
       date: $("f-date").value,
       status: $("f-status").value,
       title: $("f-title").value.trim(),
-      destination: $("f-destination").value.trim(),
-      transport: $("f-transport").value.trim(),
-      meetTime: $("f-meetTime").value.trim(),
-      meetPlace: $("f-meetPlace").value.trim(),
-      returnTime: $("f-returnTime").value.trim(),
-      budget: num($("f-budget").value),
-      actual: num($("f-actual").value),
-      people: num($("f-people").value),
       weather: $("f-weather").value.trim(),
       outfit: $("f-outfit").value.trim(),
       notes: $("f-notes").value.trim(),
       photos: $("f-photos").value.trim(),
       review: $("f-review").value.trim(),
+      itinerary: draftItin.filter(function(x){ return (x.text && x.text.trim()) || (x.time && x.time.trim()); })
+                          .map(function(x){ return { time: (x.time || "").trim(), text: (x.text || "").trim() }; }),
       packing: draftPacking.filter(function(p){ return p.text && p.text.trim(); })
                            .map(function(p){ return { text: p.text.trim(), done: !!p.done }; })
     };
@@ -732,6 +752,23 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
   $("next-sun").addEventListener("click", function(e){
     e.preventDefault(); $("f-date").value = nextSunday();
   });
+  $("add-it").addEventListener("click", function(e){
+    e.preventDefault(); draftItin.push({ time:"", text:"" }); renderItin();
+    var rows = $("f-itin").querySelectorAll("input[type=text]");
+    if(rows.length) rows[rows.length-2].focus();
+  });
+  $("iquick").addEventListener("click", function(e){
+    var a = e.target.closest("a[data-i]");
+    if(!a) return;
+    e.preventDefault();
+    var txt = a.getAttribute("data-i");
+    var exists = draftItin.some(function(x){ return (x.text||"").trim() === txt; });
+    if(!exists) draftItin.push({ time:"", text: txt });
+    renderItin();
+    var rows = $("f-itin").querySelectorAll("input[type=text]");
+    if(rows.length) rows[rows.length-2].focus();
+  });
+
   $("add-pk").addEventListener("click", function(e){
     e.preventDefault(); draftPacking.push({ text:"", done:false }); renderPacking();
     var rows = $("f-packing").querySelectorAll("input[type=text]");
