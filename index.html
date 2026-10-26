@@ -117,6 +117,14 @@ header{padding:26px 0 14px;text-align:center}
 .pk{display:flex;flex-wrap:wrap;gap:6px}
 .pk span{font-size:12px;background:#FBF5EF;border-radius:8px;padding:3px 9px;text-decoration:none}
 .pk span.on{background:#E8F6EF;color:var(--mint-d);text-decoration:line-through}
+.outfit{margin-top:12px;background:#FFF7F9;border:1px solid #FBE3EA;border-radius:12px;padding:10px 12px}
+.outfit h4{font-size:12px;color:#A4556E;margin:0 0 6px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.outfit h4 .w{font-weight:400;color:#B98C9B;font-size:11px;background:#fff;border-radius:8px;padding:1px 8px;border:1px solid #FBE3EA}
+.otags{display:flex;flex-wrap:wrap;gap:6px}
+.otag{font-size:12px;background:#fff;border:1px solid #F8DCE4;color:#8B5A6C;border-radius:9px;padding:3px 10px;line-height:1.7}
+.oquick{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.oquick a{font-size:12px;background:#fff;border:1px solid #F8DCE4;color:#A4556E;border-radius:9px;padding:3px 9px;text-decoration:none;white-space:nowrap}
+.oquick a:hover{background:#FDEFF3}
 .review{margin-top:12px;background:#FFFBF5;border-left:3px solid var(--cream);border-radius:0 10px 10px 0;padding:8px 12px;font-size:13px;white-space:pre-wrap;word-break:break-word}
 .photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .photos img{width:74px;height:74px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
@@ -280,6 +288,24 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
         <div class="hint" style="margin-top:6px">
           <a href="#" id="add-pk" style="color:var(--mint-d)">＋ 加一项</a> ·
           <a href="#" id="apply-tpl" style="color:var(--lilac)">套用模板</a>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>👗 穿搭建议</label>
+        <input type="text" id="f-weather" placeholder="天气 / 温度，例：晴 18–24℃，有风">
+        <textarea id="f-outfit" style="margin-top:8px" placeholder="每行写一件，例：&#10;米色针织开衫 + 牛仔长裙&#10;舒适平底鞋（要走很多路）&#10;帆布托特包（装手作材料）"></textarea>
+        <div class="hint" style="margin-top:6px">快捷添加：</div>
+        <div class="oquick" id="oquick">
+          <a href="#" data-o="舒适平底鞋">舒适平底鞋</a>
+          <a href="#" data-o="防晒帽 + 墨镜">防晒帽 + 墨镜</a>
+          <a href="#" data-o="薄外套（早晚温差）">薄外套</a>
+          <a href="#" data-o="雨伞 / 折叠雨衣">雨伞</a>
+          <a href="#" data-o="帆布托特包">帆布托特包</a>
+          <a href="#" data-o="小包斜挎（解放双手）">小包斜挎</a>
+          <a href="#" data-o="围巾 / 披肩">围巾披肩</a>
+          <a href="#" data-o="方便坐下的长裤">方便坐下的长裤</a>
+          <a href="#" data-o="配色主打：奶油白 + 焦糖">配色：奶油白+焦糖</a>
         </div>
       </div>
 
@@ -521,6 +547,9 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     if(num(t.actual) > 0) chips.push('<span class="chip">🧾 实际 <b>' + money(num(t.actual)) + '</b></span>');
     if(pkTotal) chips.push('<span class="chip">🎒 清单 <b>' + pkDone + '/' + pkTotal + '</b></span>');
 
+    var outfit = (t.outfit || "").split(/\n+/).map(function(s){ return s.trim(); }).filter(Boolean);
+    if(outfit.length) chips.push('<span class="chip">👗 穿搭 <b>' + outfit.length + ' 件</b></span>');
+
     function row(label, val){
       return '<div class="drow"><span>' + label + '</span><span>' + (val || '<span class="muted">未填写</span>') + '</span></div>';
     }
@@ -555,6 +584,20 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     h += row('人均', per > 0 ? money(per) : '');
     h += row('预算结余', (num(t.budget) > 0 && num(t.actual) > 0) ? money(num(t.budget) - num(t.actual)) : '');
     h += '</div></div>';
+
+    if(outfit.length || t.weather){
+      h += '<div class="outfit"><h4>👗 穿搭建议'
+         + (t.weather ? '<span class="w">' + esc(t.weather) + '</span>' : '')
+         + '</h4>';
+      if(outfit.length){
+        h += '<div class="otags">' + outfit.map(function(o){
+          return '<span class="otag">' + esc(o) + '</span>';
+        }).join("") + '</div>';
+      }else{
+        h += '<div class="muted" style="font-size:12px">还没写穿搭，点 ✎ 补上</div>';
+      }
+      h += '</div>';
+    }
     if(pkTotal){
       var pct = Math.round(pkDone / pkTotal * 100);
       h += '<div class="packing"><h4>打包清单 ' + pkDone + '/' + pkTotal + ' · ' + pct + '%</h4>';
@@ -627,6 +670,8 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     $("f-budget").value = t && num(t.budget) > 0 ? num(t.budget) : "";
     $("f-actual").value = t && num(t.actual) > 0 ? num(t.actual) : "";
     $("f-people").value = t && num(t.people) > 0 ? num(t.people) : "";
+    $("f-weather").value = t ? (t.weather || "") : "";
+    $("f-outfit").value = t ? (t.outfit || "") : "";
     $("f-notes").value = t ? (t.notes || "") : "";
     $("f-photos").value = t ? (t.photos || "") : "";
     $("f-review").value = t ? (t.review || "") : "";
@@ -651,6 +696,8 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
       budget: num($("f-budget").value),
       actual: num($("f-actual").value),
       people: num($("f-people").value),
+      weather: $("f-weather").value.trim(),
+      outfit: $("f-outfit").value.trim(),
       notes: $("f-notes").value.trim(),
       photos: $("f-photos").value.trim(),
       review: $("f-review").value.trim(),
@@ -702,6 +749,18 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
       if(!exists) draftPacking.push({ text: it, done: false });
     });
     renderPacking(); toast("清单已套用");
+  });
+
+  $("oquick").addEventListener("click", function(e){
+    var a = e.target.closest("a[data-o]");
+    if(!a) return;
+    e.preventDefault();
+    var box = $("f-outfit");
+    var lines = box.value.split(/\n+/).map(function(s){ return s.trim(); }).filter(Boolean);
+    var item = a.getAttribute("data-o");
+    if(lines.indexOf(item) === -1) lines.push(item);
+    box.value = lines.join("\n");
+    box.focus();
   });
 
   $("btn-new").addEventListener("click", function(){ openEditor(null); });
