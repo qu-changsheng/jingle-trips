@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#FFF9F2">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Jingle 出行">
-<title>Jingle · 我的周日出行计划</title>
+<meta name="apple-mobile-web-app-title" content="钟钟出行">
+<title>钟钟周末出行计划</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -97,9 +97,21 @@ header{padding:26px 0 14px;text-align:center}
 
 .trip-body{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);display:none}
 .trip.open .trip-body{display:block}
-.kv{display:grid;grid-template-columns:74px 1fr;gap:6px 10px;font-size:13px}
-.kv dt{color:var(--ink-2)}
-.kv dd{margin:0;word-break:break-all}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:12px;background:#FBF5EF;border-radius:9px;padding:3px 10px;color:#7A6B61;white-space:nowrap}
+.chip b{font-weight:600;color:var(--ink)}
+.muted{color:var(--ink-3)}
+
+.detail{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:8px}
+.dgroup h5{font-size:11px;color:var(--ink-3);font-weight:600;margin:0 0 4px;letter-spacing:.4px}
+.drow{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0;border-bottom:1px dashed #F7EEE6}
+.drow:last-child{border-bottom:none}
+.drow>span:first-child{color:var(--ink-2);flex-shrink:0}
+.drow>span:last-child{text-align:right;word-break:break-all}
+
+.pkbar{height:6px;background:#F5E9DF;border-radius:99px;overflow:hidden;margin:6px 0 8px}
+.pkbar i{display:block;height:100%;background:var(--mint);border-radius:99px;transition:width .3s}
 .packing{margin-top:12px}
 .packing h4{font-size:12px;color:var(--ink-2);margin:0 0 6px;font-weight:600}
 .pk{display:flex;flex-wrap:wrap;gap:6px}
@@ -156,6 +168,7 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
 @media (max-width:640px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .row,.row3{grid-template-columns:1fr}
+  .detail{grid-template-columns:1fr;gap:6px}
   .trip{padding:14px}
   .trip-actions{flex-direction:column}
   .logo{font-size:22px}
@@ -166,8 +179,8 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
 
 <div class="wrap">
   <header>
-    <div class="logo"><span class="bell">🔔</span> Jingle · 周日出行</div>
-    <div class="sub">每一个周日，都值得被好好计划一次</div>
+    <div class="logo"><span class="bell">🔔</span> 钟钟周末出行计划</div>
+    <div class="sub">每一个周末，都值得被好好计划一次</div>
   </header>
 
   <div class="stats">
@@ -433,11 +446,11 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
 
     var html = "";
     html += '<div class="sec">即将出发</div>';
-    html += upcoming.length ? upcoming.map(cardHTML).join("")
+    html += upcoming.length ? upcoming.map(function(t, i){ return cardHTML(t, i === 0); }).join("")
           : '<div class="empty" style="padding:22px 0">最近没有安排，给自己放个假 ☕</div>';
     if(past.length){
       html += '<div class="sec">已经出发过</div>';
-      html += past.map(cardHTML).join("");
+      html += past.map(function(t){ return cardHTML(t, false); }).join("");
     }
     $("list").innerHTML = html;
 
@@ -475,11 +488,12 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     return null;
   }
 
-  function cardHTML(t){
+  function cardHTML(t, expanded){
     var d = fmtDate(t.date);
     var isDone = t.status === "done";
     var dd = daysTo(t.date);
     var cls = isDone ? "done" : (dd !== null && dd <= 2 && dd >= 0 ? "soon" : "");
+    if(expanded) cls += " open";
 
     var badge = "";
     if(isDone){
@@ -494,18 +508,21 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
       badge = '<span class="tag lilac">已过期</span>';
     }
 
-    var meta = [];
-    if(t.meetTime) meta.push("🕘 " + esc(t.meetTime) + (t.meetPlace ? " @" + esc(t.meetPlace) : ""));
-    if(t.transport) meta.push("🚇 " + esc(t.transport));
-    if(t.returnTime) meta.push("🔙 " + esc(t.returnTime));
-    if(num(t.budget) > 0) meta.push("💰 预算 " + money(num(t.budget)));
-
     var pkTotal = (t.packing || []).length;
     var pkDone = (t.packing || []).filter(function(p){ return p.done; }).length;
-    var spendLine = "";
-    if(num(t.actual) > 0){
-      var per = num(t.people) > 0 ? num(t.actual)/num(t.people) : num(t.actual);
-      spendLine = "实际 " + money(num(t.actual)) + (num(t.people) > 1 ? "（人均 " + money(per) + "）" : "");
+    var people = num(t.people);
+    var per = (people > 0 && num(t.actual) > 0) ? num(t.actual) / people : 0;
+
+    var chips = [];
+    chips.push('<span class="chip">🕘 ' + (t.meetTime ? esc(t.meetTime) : '<span class="muted">时间待定</span>') + '</span>');
+    if(t.transport) chips.push('<span class="chip">🚇 ' + esc(t.transport) + '</span>');
+    if(t.returnTime) chips.push('<span class="chip">🔙 ' + esc(t.returnTime) + '</span>');
+    if(num(t.budget) > 0) chips.push('<span class="chip">💰 预算 <b>' + money(num(t.budget)) + '</b></span>');
+    if(num(t.actual) > 0) chips.push('<span class="chip">🧾 实际 <b>' + money(num(t.actual)) + '</b></span>');
+    if(pkTotal) chips.push('<span class="chip">🎒 清单 <b>' + pkDone + '/' + pkTotal + '</b></span>');
+
+    function row(label, val){
+      return '<div class="drow"><span>' + label + '</span><span>' + (val || '<span class="muted">未填写</span>') + '</span></div>';
     }
 
     var h = '<div class="trip ' + cls + '" data-id="' + t.id + '">';
@@ -514,8 +531,7 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     h += '<div class="trip-main">';
     h += '<div class="trip-title">' + esc(t.title) + " " + badge + '</div>';
     if(t.destination) h += '<div class="trip-dest"><i>📍 ' + esc(t.destination) + '</i></div>';
-    if(meta.length) h += '<div class="trip-dest">' + meta.map(function(m){ return "<i>"+m+"</i>"; }).join("") + '</div>';
-    if(spendLine) h += '<div class="trip-dest"><i>' + spendLine + '</i></div>';
+    h += '<div class="chips">' + chips.join("") + '</div>';
     h += '</div>';
     h += '<div class="trip-actions">';
     h += '<button class="icon-btn" data-toggle="' + t.id + '" title="切换状态">' + (isDone ? "↩" : "✓") + '</button>';
@@ -524,19 +540,32 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     h += '</div></div>';
 
     h += '<div class="trip-body">';
-    h += '<dl class="kv">';
-    h += '<dt>集合</dt><dd>' + (t.meetTime ? esc(t.meetTime) : "—") + (t.meetPlace ? " · " + esc(t.meetPlace) : "") + '</dd>';
-    h += '<dt>返程</dt><dd>' + (t.returnTime ? esc(t.returnTime) : "—") + '</dd>';
-    h += '<dt>交通</dt><dd>' + (t.transport ? esc(t.transport) : "—") + '</dd>';
-    h += '<dt>预算</dt><dd>' + (num(t.budget) > 0 ? money(num(t.budget)) : "—") + '</dd>';
-    h += '<dt>花费</dt><dd>' + (num(t.actual) > 0 ? money(num(t.actual)) : "—") + '</dd>';
-    h += '</dl>';
+    h += '<div class="detail">';
+    h += '<div class="dgroup"><h5>行程安排</h5>';
+    h += row('集合时间', t.meetTime ? esc(t.meetTime) : '');
+    h += row('集合地点', t.meetPlace ? esc(t.meetPlace) : '');
+    h += row('返程时间', t.returnTime ? esc(t.returnTime) : '');
+    h += row('交通方式', t.transport ? esc(t.transport) : '');
+    h += row('目的地', t.destination ? esc(t.destination) : '');
+    h += '</div>';
+    h += '<div class="dgroup"><h5>花费记录</h5>';
+    h += row('预算', num(t.budget) > 0 ? money(num(t.budget)) : '');
+    h += row('实际花费', num(t.actual) > 0 ? money(num(t.actual)) : '');
+    h += row('同行人数', people > 0 ? people + ' 人' : '');
+    h += row('人均', per > 0 ? money(per) : '');
+    h += row('预算结余', (num(t.budget) > 0 && num(t.actual) > 0) ? money(num(t.budget) - num(t.actual)) : '');
+    h += '</div></div>';
     if(pkTotal){
-      h += '<div class="packing"><h4>打包清单 ' + pkDone + "/" + pkTotal + '</h4><div class="pk">';
+      var pct = Math.round(pkDone / pkTotal * 100);
+      h += '<div class="packing"><h4>打包清单 ' + pkDone + '/' + pkTotal + ' · ' + pct + '%</h4>';
+      h += '<div class="pkbar"><i style="width:' + pct + '%"></i></div>';
+      h += '<div class="pk">';
       h += (t.packing||[]).map(function(p){
         return '<span class="' + (p.done ? "on" : "") + '">' + esc(p.text) + '</span>';
       }).join("");
       h += '</div></div>';
+    }else{
+      h += '<div class="packing"><h4>打包清单</h4><div class="muted" style="font-size:12px">还没有清单，点 ✎ 编辑时可以套用模板</div></div>';
     }
     if(t.notes){
       h += '<div class="review" style="border-left-color:var(--sky)"><b>注意事项</b><br>' + esc(t.notes) + '</div>';
