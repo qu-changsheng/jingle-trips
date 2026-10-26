@@ -163,8 +163,8 @@ dialog::backdrop{background:rgba(74,63,56,.42)}
 /* 行程安排编辑 */
 .itedit{display:flex;flex-direction:column;gap:6px}
 .itrow{display:flex;align-items:center;gap:7px}
-.itrow input{flex:1;padding:7px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);font:inherit;font-size:13px;color:var(--ink)}
-.itrow input.tm{flex:0 0 82px;text-align:center;font-weight:600;color:var(--peach-d)}
+.itrow input{flex:1;padding:7px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);font:inherit;font-size:13px;color:var(--ink);min-width:0}
+.itrow input.pl{flex:0 0 32%;text-align:left}
 .itrow .del{color:var(--ink-3);font-size:16px;width:26px;height:26px;border-radius:50%;flex:0 0 auto}
 .itrow .del:hover{background:#FFECE7;color:#E0603F}
 
@@ -176,6 +176,7 @@ dialog::backdrop{background:rgba(74,63,56,.42)}
 .tl li:last-child{padding-bottom:0}
 .tl li:last-child::after{display:none}
 .tl .tm{color:var(--peach-d);font-weight:600;margin-right:8px;font-variant-numeric:tabular-nums}
+.tl .pl{display:inline-block;font-size:11px;color:var(--peach-d);background:#FDF1E8;border:1px solid #F7E1D0;border-radius:7px;padding:1px 7px;margin-right:7px;vertical-align:1px;white-space:nowrap}
 
 dialog.tpl .dlg-body{max-height:70vh}
 .tplrow{display:flex;gap:8px;align-items:center;padding:9px 12px;background:var(--card);border-radius:12px;margin-bottom:8px;border:1px solid var(--line)}
@@ -537,7 +538,9 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     var per = (people > 0 && num(t.actual) > 0) ? num(t.actual) / people : 0;
 
     var chips = [];
-    var itin = (t.itinerary || []).filter(function(x){ return (x.text||"").trim() || (x.time||"").trim(); });
+    var itin = (t.itinerary || []).filter(function(x){
+      return (x.text||"").trim() || (x.time||"").trim() || (x.place||"").trim();
+    });
     chips.push('<span class="chip">🗓 行程 <b>' + itin.length + ' 条</b></span>');
     if(pkTotal) chips.push('<span class="chip">🎒 清单 <b>' + pkDone + '/' + pkTotal + '</b></span>');
 
@@ -566,7 +569,9 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     if(itin.length){
       h += '<div class="dgroup" style="margin-bottom:10px"><h5>🗓 具体行程安排</h5><ul class="tl">';
       h += itin.map(function(x){
-        return '<li>' + esc(x.text || x.time || '') + '</li>';
+        var body = esc(x.text || x.time || '');
+        var place = (x.place || '').trim();
+        return '<li>' + (place ? '<span class="pl">📍 ' + esc(place) + '</span>' : '') + body + '</li>';
       }).join("");
       h += '</ul></div>';
     }else{
@@ -621,15 +626,18 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
     draftItin.forEach(function(item, i){
       var row = document.createElement("div");
       row.className = "itrow";
+      var pl = document.createElement("input");
+      pl.type = "text"; pl.className = "pl"; pl.value = item.place || ""; pl.placeholder = "地点";
+      pl.addEventListener("input", function(){ draftItin[i].place = pl.value; });
       var txt = document.createElement("input");
-      txt.type = "text"; txt.value = item.text || ""; txt.placeholder = "例如：10:30 逛手作市集";
+      txt.type = "text"; txt.value = item.text || ""; txt.placeholder = "做什么 / 去哪玩";
       txt.addEventListener("input", function(){ draftItin[i].text = txt.value; });
       var del = document.createElement("button");
       del.type = "button"; del.className = "del"; del.textContent = "×";
       del.addEventListener("click", function(){
         draftItin.splice(i,1); renderItin();
       });
-      row.appendChild(txt); row.appendChild(del);
+      row.appendChild(pl); row.appendChild(txt); row.appendChild(del);
       box.appendChild(row);
     });
     if(draftItin.length === 0){
@@ -684,15 +692,15 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
       itin = t.itinerary.map(function(x){
         var tm = (x.time || "").trim();
         var tx = (x.text || "").trim();
-        return { time: "", text: (tm && tx) ? (tm + " " + tx) : (tx || tm) };
+        return { place: x.place || "", text: (tm && tx) ? (tm + " " + tx) : (tx || tm) };
       });
     }else if(t){
       if(t.meetTime || t.meetPlace){
-        itin.push({ time: "", text: (t.meetTime ? t.meetTime + " " : "") + "集合" + (t.meetPlace ? " · " + t.meetPlace : "") });
+        itin.push({ place: "", text: (t.meetTime ? t.meetTime + " " : "") + "集合" + (t.meetPlace ? " · " + t.meetPlace : "") });
       }
-      if(t.transport) itin.push({ time: "", text: "交通：" + t.transport });
-      if(t.destination) itin.push({ time: "", text: "到 " + t.destination });
-      if(t.returnTime) itin.push({ time: "", text: t.returnTime + " 返程" });
+      if(t.transport) itin.push({ place: "", text: "交通：" + t.transport });
+      if(t.destination) itin.push({ place: "", text: "到 " + t.destination });
+      if(t.returnTime) itin.push({ place: "", text: t.returnTime + " 返程" });
     }
 
     draftItin = itin;
@@ -715,8 +723,11 @@ footer{text-align:center;color:var(--ink-3);font-size:11px;padding:26px 0 10px}
       notes: $("f-notes").value.trim(),
       photos: $("f-photos").value.trim(),
       review: $("f-review").value.trim(),
-      itinerary: draftItin.filter(function(x){ return x.text && x.text.trim(); })
-                          .map(function(x){ return { text: x.text.trim() }; }),
+      itinerary: draftItin.filter(function(x){
+                            return (x.text && x.text.trim()) || (x.place && x.place.trim());
+                          }).map(function(x){
+                            return { place: (x.place || "").trim(), text: (x.text || "").trim() };
+                          }),
       packing: draftPacking.filter(function(p){ return p.text && p.text.trim(); })
                            .map(function(p){ return { text: p.text.trim(), done: !!p.done }; })
     };
